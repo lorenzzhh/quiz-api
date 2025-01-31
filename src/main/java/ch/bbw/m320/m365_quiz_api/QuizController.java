@@ -20,4 +20,9 @@ public class QuizController {
     public List<QuestionDTO> getQuestion(@PathVariable String category) {
         return quizService.getQuestions(category);
     }
+
+    @PostMapping("/statistics")
+    public List<QuizStatisticsDto> getStatistics(@RequestBody QuizStatisticsDto quizStatisticsDto) {
+        return quizService.setStatistics(quizStatisticsDto);
+    }
 }

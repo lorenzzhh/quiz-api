@@ -16,11 +16,13 @@ public class QuizService {
 
     private final MongoDatabase db;
     private final MongoCollection<Document> towns;
+    private final MongoCollection<Document> statistics;
 
     @Autowired
     public QuizService(MongoClient mongoClient) {
         this.db = mongoClient.getDatabase("town-quiz-db");
         this.towns = db.getCollection("towns");
+        this.statistics = db.getCollection("statistics");
     }
 
     //todo aggregations - evtl get new tows for every questions
@@ -129,4 +131,35 @@ public class QuizService {
     }
 
 
+    public List<QuizStatisticsDto> setStatistics(QuizStatisticsDto quizStatisticsDto) {
+        // Create a Document object from the QuizStatisticsDto
+        Document document = new Document()
+                .append("name", quizStatisticsDto.getName())
+                .append("points", quizStatisticsDto.getPoints())
+                .append("timeInSeconds", quizStatisticsDto.getTimeInSeconds());
+
+        // Insert the document into the MongoDB collection
+        statistics.insertOne(document);
+
+        List<Document> pipeline = new ArrayList<>();
+        pipeline.add(new Document("$sort", new Document("points", -1).append("timeInSeconds", 1))); // Sort by points (desc), timeInSeconds (asc)
+        pipeline.add(new Document("$limit", 3)); // Limit the result to 3 documents
+
+        // Run the aggregation query and get the result as a list of documents
+        List<Document> topThreeDocuments = statistics.aggregate(pipeline).into(new ArrayList<>());
+
+        // Convert the list of documents into a list of QuizStatisticsDto
+        List<QuizStatisticsDto> topThreeStatistics = new ArrayList<>();
+        for (Document doc : topThreeDocuments) {
+            String name = doc.getString("name");
+            int points = doc.getInteger("points");
+            int timeInSeconds = doc.getInteger("timeInSeconds");
+
+            // Create a QuizStatisticsDto and add it to the list
+            QuizStatisticsDto quizStatisticsDto2 = new QuizStatisticsDto(name, points, timeInSeconds);
+            topThreeStatistics.add(quizStatisticsDto2);
+        }
+
+        return topThreeStatistics;
+    }
 }

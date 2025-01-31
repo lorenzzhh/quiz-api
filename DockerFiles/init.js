@@ -1,6 +1,7 @@
 db = db.getSiblingDB('town-quiz-db');
 
 db.createCollection('towns');
+db.createCollection('statistics');
 
 db.towns.insertMany([
     {
