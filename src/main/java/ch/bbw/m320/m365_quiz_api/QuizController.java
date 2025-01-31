@@ -2,6 +2,8 @@ package ch.bbw.m320.m365_quiz_api;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/questions")
@@ -15,7 +17,7 @@ public class QuizController {
     }
 
     @GetMapping("/{category}")
-    public QuestionDTO getQuestion(@PathVariable String category) {
-        return quizService.getQuestion(category);
+    public List<QuestionDTO> getQuestion(@PathVariable String category) {
+        return quizService.getQuestions(category);
     }
 }

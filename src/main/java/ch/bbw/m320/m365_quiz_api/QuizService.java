@@ -1,7 +1,6 @@
 package ch.bbw.m320.m365_quiz_api;
 
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
@@ -24,19 +23,32 @@ public class QuizService {
         this.towns = db.getCollection("towns");
     }
 
-
-    public QuestionDTO getQuestion(String category) {
-
+    public List<QuestionDTO> getQuestions(String category) {
+        // Fetch 5 towns from MongoDB based on the category
         List<Document> result = towns.aggregate(Arrays.asList(
-                new Document("$match", new Document(category, new Document("$ne", null))), // Filter: Kategorie darf nicht null sein
-                new Document("$sort", new Document(category, -1)), // Sortieren nach der Kategorie in absteigender Reihenfolge
-                new Document("$limit", 3) // Nur die ersten drei Städte auswählen
+                new Document("$match", new Document(category, new Document("$ne", null))), // Filter: Category must not be null
+                new Document("$sort", new Document(category, -1)), // Sort by category descending
+                new Document("$limit", 5) // Fetch 5 towns
         )).into(new ArrayList<>());
 
-        System.out.println(result);
+        System.out.println(result); // Debugging output
 
-        List<String> answers = Arrays.asList("Tokyo", "Berlin", "New York");
-        return new QuestionDTO(category, "Which has the biggest population?", answers, "Tokyo");
+        List<QuestionDTO> questions = new ArrayList<>();
+
+        for (Document town : result) {
+            String name = town.getString("name");
+            int population = town.getInteger("population");
+
+            List<String> answers = Arrays.asList("Tokyo", "Berlin", "New York", name);
+            String correctAnswer = answers.get(0); // Example logic: Tokyo always correct
+
+            questions.add(
+                    new QuestionDTO(
+                            category, "Which city has the largest population?", answers, correctAnswer
+                    )
+            );
+        }
+
+        return questions;
     }
-
 }
