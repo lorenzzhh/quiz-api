@@ -1,5 +1,6 @@
 package ch.bbw.m320.m365_quiz_api;
 
+import com.mongodb.client.result.InsertOneResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +20,11 @@ public class QuizController {
     @GetMapping("/{category}")
     public List<QuestionDTO> getQuestion(@PathVariable String category) {
         return quizService.getQuestions(category);
+    }
+
+    @PostMapping
+    public InsertOneResult addTown(@RequestBody TownDTO town) {
+        return quizService.addTown(town);
     }
 
     @PostMapping("/statistics")

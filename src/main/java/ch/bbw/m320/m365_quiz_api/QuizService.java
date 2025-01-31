@@ -3,6 +3,7 @@ package ch.bbw.m320.m365_quiz_api;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.result.InsertOneResult;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -128,6 +129,16 @@ public class QuizService {
         List<TownDTO> shuffledTowns = new ArrayList<>(towns);
         Collections.shuffle(shuffledTowns);
         return shuffledTowns.subList(0, numAnswers);
+    }
+
+    public InsertOneResult addTown(TownDTO town) {
+        Document townDocument = new Document("name", town.getName())
+                .append("population", town.getPopulation())
+                .append("area_km2", town.getAreaKm2())
+                .append("founded", town.getFounded())
+                .append("country", town.getCountry());
+
+        return towns.insertOne(townDocument);
     }
 
 
