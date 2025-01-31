@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -23,6 +24,9 @@ public class QuizService {
         this.towns = db.getCollection("towns");
     }
 
+    //todo aggregations - evtl get new tows for every questions
+    //todo höchstes und niedrigstes fragen stellen
+
     public List<QuestionDTO> getQuestions(String category) {
         // Fetch 5 towns from MongoDB based on the category
         List<Document> result = towns.aggregate(Arrays.asList(
@@ -35,8 +39,9 @@ public class QuizService {
 
         List<QuestionDTO> questions = new ArrayList<>();
 
-        questions.add(generateQuestion(townDTOS, category));
-        questions.add(generateQuestion(townDTOS, category));
+        for (int i = 0; i < 3; i++) {
+            questions.add(generateQuestion(townDTOS, category));
+        }
 
         return questions;
     }
@@ -50,26 +55,22 @@ public class QuizService {
             TownDTO townDTO = new TownDTO();
             townDTO.setName(town.getString("name"));
             townDTO.setCountry(town.getString("country"));
-
             townDTO.setPopulation(town.getInteger("population"));
-            townDTO.setAreaKm2(town.getInteger("area_km2"));
 
-            //townDTO.setFounded(new Date(town.getString("founded")));
-
-//            Object areaValue = town.get("area_km2");
-//            if (areaValue instanceof Number) {
-//                townDTO.setAreaKm2(((Number) areaValue).doubleValue());
-//            } else if (areaValue instanceof String) {
-//                townDTO.setAreaKm2(Double.parseDouble((String) areaValue));
-//            }
+            Object areaValue = town.get("area_km2");
+            if (areaValue instanceof Number) {
+                townDTO.setAreaKm2(((Number) areaValue).doubleValue());
+            } else if (areaValue instanceof String) {
+                townDTO.setAreaKm2(Double.parseDouble((String) areaValue));
+            }
 
 
-//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//            try {
-//                townDTO.setFounded(dateFormat.parse(town.getString("founded")));
-//            } catch (ParseException e) {
-//                e.printStackTrace(); // oder eine sinnvolle Fehlerbehandlung
-//            }
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            try {
+                townDTO.setFounded(dateFormat.parse(town.getString("founded")));
+            } catch (ParseException e) {
+                e.printStackTrace(); // oder eine sinnvolle Fehlerbehandlung
+            }
 
             townDTOs.add(townDTO);
         }
