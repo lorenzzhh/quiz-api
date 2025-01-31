@@ -72,7 +72,7 @@ public class QuizService {
     public QuestionDTO generateQuestion(String category) {
         List<TownDTO> answers = getRandomTowns(category);
 
-        boolean findLargest = random.nextBoolean(); // 50:50 Chance für größte oder kleinste Werte
+        boolean findLargest = random.nextBoolean();
 
         Comparator<TownDTO> comparator;
         String questionText;
@@ -84,7 +84,7 @@ public class QuizService {
                         ? "Which city has the largest population?"
                         : "Which city has the smallest population?";
                 break;
-            case "areaKm2":
+            case "areakm2":
                 comparator = Comparator.comparingDouble(TownDTO::getAreaKm2);
                 questionText = findLargest
                         ? "Which city has the largest area?"
@@ -147,14 +147,12 @@ public class QuizService {
 
         List<Document> topThreeDocuments = statisticsCollection.aggregate(pipeline).into(new ArrayList<>());
 
-        // Convert the list of documents into a list of QuizStatisticsDto
         List<QuizStatisticsDto> topThreeStatistics = new ArrayList<>();
         for (Document doc : topThreeDocuments) {
             String name = doc.getString("name");
             int points = doc.getInteger("points");
             int timeInSeconds = doc.getInteger("timeInSeconds");
 
-            // Create a QuizStatisticsDto and add it to the list
             QuizStatisticsDto quizStatisticsDto2 = new QuizStatisticsDto(name, points, timeInSeconds);
             topThreeStatistics.add(quizStatisticsDto2);
         }
