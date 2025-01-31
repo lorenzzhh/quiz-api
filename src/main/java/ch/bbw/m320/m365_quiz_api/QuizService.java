@@ -16,21 +16,21 @@ import java.util.*;
 public class QuizService {
 
     private final MongoDatabase db;
-    private final MongoCollection<Document> towns;
-    private final MongoCollection<Document> statistics;
+    private final MongoCollection<Document> townCollection;
+    private final MongoCollection<Document> statisticsCollection;
 
     @Autowired
     public QuizService(MongoClient mongoClient) {
         this.db = mongoClient.getDatabase("town-quiz-db");
-        this.towns = db.getCollection("towns");
-        this.statistics = db.getCollection("statistics");
+        this.townCollection = db.getCollection("towns");
+        this.statisticsCollection = db.getCollection("statistics");
     }
 
     //todo aggregations - evtl get new tows for every questions
 
     public List<QuestionDTO> getQuestions(String category) {
         // Fetch 5 towns from MongoDB based on the category
-        List<Document> result = towns.aggregate(Arrays.asList(
+        List<Document> result = townCollection.aggregate(Arrays.asList(
                 new Document("$match", new Document(category, new Document("$ne", null))), // Filter: Category must not be null
                 new Document("$sort", new Document(category, -1)), // Sort by category descending
                 new Document("$limit", 5) // Fetch 5 towns
@@ -138,26 +138,24 @@ public class QuizService {
                 .append("founded", town.getFounded())
                 .append("country", town.getCountry());
 
-        return towns.insertOne(townDocument);
+        return townCollection.insertOne(townDocument);
     }
 
 
     public List<QuizStatisticsDto> setStatistics(QuizStatisticsDto quizStatisticsDto) {
-        // Create a Document object from the QuizStatisticsDto
+
         Document document = new Document()
                 .append("name", quizStatisticsDto.getName())
                 .append("points", quizStatisticsDto.getPoints())
                 .append("timeInSeconds", quizStatisticsDto.getTimeInSeconds());
 
-        // Insert the document into the MongoDB collection
-        statistics.insertOne(document);
+        statisticsCollection.insertOne(document);
 
         List<Document> pipeline = new ArrayList<>();
-        pipeline.add(new Document("$sort", new Document("points", -1).append("timeInSeconds", 1))); // Sort by points (desc), timeInSeconds (asc)
-        pipeline.add(new Document("$limit", 3)); // Limit the result to 3 documents
+        pipeline.add(new Document("$sort", new Document("points", -1).append("timeInSeconds", 1)));
+        pipeline.add(new Document("$limit", 3));
 
-        // Run the aggregation query and get the result as a list of documents
-        List<Document> topThreeDocuments = statistics.aggregate(pipeline).into(new ArrayList<>());
+        List<Document> topThreeDocuments = statisticsCollection.aggregate(pipeline).into(new ArrayList<>());
 
         // Convert the list of documents into a list of QuizStatisticsDto
         List<QuizStatisticsDto> topThreeStatistics = new ArrayList<>();
