@@ -7,9 +7,9 @@ import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 public class QuizService {
@@ -31,24 +31,69 @@ public class QuizService {
                 new Document("$limit", 5) // Fetch 5 towns
         )).into(new ArrayList<>());
 
-        System.out.println(result); // Debugging output
+        List<TownDTO> townDTOS = mapToTownDTO(result);
 
         List<QuestionDTO> questions = new ArrayList<>();
 
-        for (Document town : result) {
-            String name = town.getString("name");
-            int population = town.getInteger("population");
-
-            List<String> answers = Arrays.asList("Tokyo", "Berlin", "New York", name);
-            String correctAnswer = answers.get(0); // Example logic: Tokyo always correct
-
-            questions.add(
-                    new QuestionDTO(
-                            category, "Which city has the largest population?", answers, correctAnswer
-                    )
-            );
-        }
+        questions.add(generateQuestion(townDTOS, category));
+        questions.add(generateQuestion(townDTOS, category));
 
         return questions;
     }
+
+
+
+    private List<TownDTO> mapToTownDTO(List<Document> result) {
+        List<TownDTO> townDTOs = new ArrayList<>();
+
+        for (Document town : result) {
+            TownDTO townDTO = new TownDTO();
+            townDTO.setName(town.getString("name"));
+            townDTO.setCountry(town.getString("country"));
+
+            townDTO.setPopulation(town.getInteger("population"));
+            townDTO.setAreaKm2(town.getInteger("area_km2"));
+
+            //townDTO.setFounded(new Date(town.getString("founded")));
+
+//            Object areaValue = town.get("area_km2");
+//            if (areaValue instanceof Number) {
+//                townDTO.setAreaKm2(((Number) areaValue).doubleValue());
+//            } else if (areaValue instanceof String) {
+//                townDTO.setAreaKm2(Double.parseDouble((String) areaValue));
+//            }
+
+
+//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//            try {
+//                townDTO.setFounded(dateFormat.parse(town.getString("founded")));
+//            } catch (ParseException e) {
+//                e.printStackTrace(); // oder eine sinnvolle Fehlerbehandlung
+//            }
+
+            townDTOs.add(townDTO);
+        }
+
+        return townDTOs;
+    }
+
+    private QuestionDTO generateQuestion(List<TownDTO> towns, String category){
+
+        List<TownDTO> answers = getRandomTowns(towns);
+
+        TownDTO correctAnswer = answers.stream()
+                .max(Comparator.comparingInt(TownDTO::getPopulation))
+                .orElse(answers.get(0));
+
+        return new QuestionDTO(category, "Which city has the largest population?", answers, correctAnswer);
+    }
+
+    private List<TownDTO> getRandomTowns(List<TownDTO> towns) {
+        int numAnswers = Math.min(3, towns.size());
+        List<TownDTO> shuffledTowns = new ArrayList<>(towns);
+        Collections.shuffle(shuffledTowns);
+        return shuffledTowns.subList(0, numAnswers);
+    }
+
+
 }

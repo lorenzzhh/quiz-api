@@ -9,15 +9,13 @@ import java.util.List;
 public class QuestionDTO {
     private String category;
     private String question;
-    private List<String> answers;
-    private String correctAnswer;
+    private List<TownDTO> answers;
+    private TownDTO correctAnswer;
 
-    public QuestionDTO(String category, String question, List<String> answers, String correctAnswer) {
+    public QuestionDTO(String category, String question, List<TownDTO> answers, TownDTO correctAnswer) {
         this.category = category;
         this.question = question;
         this.answers = answers;
         this.correctAnswer = correctAnswer;
     }
-
-
 }
