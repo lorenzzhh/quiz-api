@@ -5,7 +5,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -25,7 +24,6 @@ public class QuizService {
     }
 
     //todo aggregations - evtl get new tows for every questions
-    //todo höchstes und niedrigstes fragen stellen
 
     public List<QuestionDTO> getQuestions(String category) {
         // Fetch 5 towns from MongoDB based on the category
@@ -39,13 +37,12 @@ public class QuizService {
 
         List<QuestionDTO> questions = new ArrayList<>();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             questions.add(generateQuestion(townDTOS, category));
         }
 
         return questions;
     }
-
 
 
     private List<TownDTO> mapToTownDTO(List<Document> result) {
@@ -78,16 +75,51 @@ public class QuizService {
         return townDTOs;
     }
 
-    private QuestionDTO generateQuestion(List<TownDTO> towns, String category){
 
+    private final Random random = new Random();
+
+    public QuestionDTO generateQuestion(List<TownDTO> towns, String category) {
         List<TownDTO> answers = getRandomTowns(towns);
 
+        boolean findLargest = random.nextBoolean(); // 50:50 Chance für größte oder kleinste Werte
+
+        Comparator<TownDTO> comparator;
+        String questionText;
+
+        switch (category.toLowerCase()) {
+            case "population":
+                comparator = Comparator.comparingInt(TownDTO::getPopulation);
+                questionText = findLargest
+                        ? "Which city has the largest population?"
+                        : "Which city has the smallest population?";
+                break;
+            case "areaKm2":
+                comparator = Comparator.comparingDouble(TownDTO::getAreaKm2);
+                questionText = findLargest
+                        ? "Which city has the largest area?"
+                        : "Which city has the smallest area?";
+                break;
+            case "founded":
+                comparator = Comparator.comparing(TownDTO::getFounded);
+                questionText = findLargest
+                        ? "Which city was founded most recently?"
+                        : "Which city was founded the earliest?";
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown category: " + category);
+        }
+
+        if (!findLargest) {
+            comparator = comparator.reversed();
+        }
+
         TownDTO correctAnswer = answers.stream()
-                .max(Comparator.comparingInt(TownDTO::getPopulation))
+                .max(comparator)
                 .orElse(answers.get(0));
 
-        return new QuestionDTO(category, "Which city has the largest population?", answers, correctAnswer);
+        return new QuestionDTO(category, questionText, answers, correctAnswer);
     }
+
 
     private List<TownDTO> getRandomTowns(List<TownDTO> towns) {
         int numAnswers = Math.min(3, towns.size());
