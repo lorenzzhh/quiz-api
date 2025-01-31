@@ -26,22 +26,11 @@ public class QuizService {
         this.statisticsCollection = db.getCollection("statistics");
     }
 
-    //todo aggregations - evtl get new tows for every questions
-
     public List<QuestionDTO> getQuestions(String category) {
-        // Fetch 5 towns from MongoDB based on the category
-        List<Document> result = townCollection.aggregate(Arrays.asList(
-                new Document("$match", new Document(category, new Document("$ne", null))), // Filter: Category must not be null
-                new Document("$sort", new Document(category, -1)), // Sort by category descending
-                new Document("$limit", 5) // Fetch 5 towns
-        )).into(new ArrayList<>());
-
-        List<TownDTO> townDTOS = mapToTownDTO(result);
-
         List<QuestionDTO> questions = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
-            questions.add(generateQuestion(townDTOS, category));
+            questions.add(generateQuestion(category));
         }
 
         return questions;
@@ -64,7 +53,6 @@ public class QuizService {
                 townDTO.setAreaKm2(Double.parseDouble((String) areaValue));
             }
 
-
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             try {
                 townDTO.setFounded(dateFormat.parse(town.getString("founded")));
@@ -81,8 +69,8 @@ public class QuizService {
 
     private final Random random = new Random();
 
-    public QuestionDTO generateQuestion(List<TownDTO> towns, String category) {
-        List<TownDTO> answers = getRandomTowns(towns);
+    public QuestionDTO generateQuestion(String category) {
+        List<TownDTO> answers = getRandomTowns(category);
 
         boolean findLargest = random.nextBoolean(); // 50:50 Chance für größte oder kleinste Werte
 
@@ -124,11 +112,13 @@ public class QuizService {
     }
 
 
-    private List<TownDTO> getRandomTowns(List<TownDTO> towns) {
-        int numAnswers = Math.min(3, towns.size());
-        List<TownDTO> shuffledTowns = new ArrayList<>(towns);
-        Collections.shuffle(shuffledTowns);
-        return shuffledTowns.subList(0, numAnswers);
+    private List<TownDTO> getRandomTowns(String category) {
+        List<Document> result = townCollection.aggregate(Arrays.asList(
+                new Document("$match", new Document(category, new Document("$ne", null))),
+                new Document("$sample", new Document("size", 3))
+        )).into(new ArrayList<>());
+
+        return mapToTownDTO(result);
     }
 
     public InsertOneResult addTown(TownDTO town) {
